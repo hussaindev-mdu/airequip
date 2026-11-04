@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "blender": {
+      "command": "/opt/homebrew/bin/uvx",
+      "args": ["blender-mcp"]
+    },
+    "playwright": {
+      "command": "/opt/homebrew/opt/node@22/bin/npx",
+      "args": ["-y", "@playwright/mcp@latest", "--browser", "chrome"],
+      "env": { "PATH": "/opt/homebrew/opt/node@22/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+    },
+    "shadcn": {
+      "command": "/opt/homebrew/opt/node@22/bin/npx",
+      "args": ["-y", "shadcn@latest", "mcp"],
+      "env": { "PATH": "/opt/homebrew/opt/node@22/bin:/usr/bin:/bin:/usr/sbin:/sbin" }
+    }
+  }
+}

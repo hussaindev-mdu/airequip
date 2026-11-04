@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+*.log
+.playwright-mcp
+# local 3D tooling (Blender add-on / source scene) — not needed to build the site
+tools
