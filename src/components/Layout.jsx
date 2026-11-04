@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Menu, Moon, Sun, Wind, X, Phone, Mail, MessageCircle } from 'lucide-react'
 import { BRAND, nav, districts, slugify, contact } from '../data'
 import { useQuote } from '../QuoteContext'
 import { asset } from '../lib/asset'
+import { loadCollection } from '../pages/lazy'
 
 export function Logo() {
   return (
@@ -38,6 +39,9 @@ function ThemeToggle() {
   )
 }
 
+// start downloading the 3D page as soon as someone hovers, focuses or touches its link
+const prefetch = (to) => (to === '/collection' ? { onMouseEnter: loadCollection, onFocus: loadCollection, onTouchStart: loadCollection } : {})
+
 const linkCls = ({ isActive }) =>
   `rounded-full px-3.5 py-2 text-sm transition ${isActive ? 'bg-fg/10 font-semibold text-fg' : 'text-fg-3 hover:bg-fg/5 hover:text-fg'}`
 
@@ -57,7 +61,7 @@ export function Header() {
       <div className={`glass mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-2.5 transition-all sm:px-6 ${scrolled ? 'bg-surface/70' : ''}`}>
         <Logo />
         <nav className="hidden items-center gap-0.5 lg:flex">
-          {nav.map((n) => <NavLink key={n.to} to={n.to} className={linkCls}>{n.label}</NavLink>)}
+          {nav.map((n) => <NavLink key={n.to} to={n.to} className={linkCls} {...prefetch(n.to)}>{n.label}</NavLink>)}
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -72,7 +76,7 @@ export function Header() {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
             className="glass mx-auto mt-2 max-w-7xl rounded-3xl bg-surface/85 p-3 lg:hidden">
             {nav.map((n) => (
-              <NavLink key={n.to} to={n.to} className={({ isActive }) => `block rounded-2xl px-4 py-3 ${isActive ? 'bg-fg/10 font-semibold text-fg' : 'text-fg-2 hover:bg-fg/5'}`}>{n.label}</NavLink>
+              <NavLink key={n.to} to={n.to} {...prefetch(n.to)} className={({ isActive }) => `block rounded-2xl px-4 py-3 ${isActive ? 'bg-fg/10 font-semibold text-fg' : 'text-fg-2 hover:bg-fg/5'}`}>{n.label}</NavLink>
             ))}
             <button onClick={openQuote} className="btn btn-primary mt-2 w-full">Request a quote</button>
           </motion.div>
@@ -175,6 +179,14 @@ export function QuoteModal({ open, onClose, catalogue }) {
   )
 }
 
+function PageLoader() {
+  return (
+    <div className="grid min-h-[70vh] place-items-center" role="status" aria-label="Loading">
+      <span className="h-10 w-10 animate-spin rounded-full border-2 border-fg/15 border-t-flame" />
+    </div>
+  )
+}
+
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [pathname])
@@ -194,7 +206,7 @@ export default function SiteLayout() {
       <ScrollToTop />
       <Header />
       <motion.main key={pathname} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-        <Outlet />
+        <Suspense fallback={<PageLoader />}><Outlet /></Suspense>
       </motion.main>
       <Footer />
     </div>

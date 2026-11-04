@@ -1,9 +1,10 @@
+import { lazy } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import SiteLayout from './components/Layout'
 import { QuoteProvider } from './QuoteContext'
 import Home from './pages/Home'
 import Products from './pages/Products'
-import Collection from './pages/Collection'
+import { loadCollection } from './pages/lazy'
 import Services from './pages/Services'
 import Industries from './pages/Industries'
 import Locations from './pages/Locations'
@@ -11,6 +12,8 @@ import District from './pages/District'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import NotFound from './pages/NotFound'
+
+const Collection = lazy(loadCollection)
 
 export default function App() {
   return (

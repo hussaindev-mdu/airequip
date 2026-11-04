@@ -8,7 +8,7 @@ import { useQuote } from '../QuoteContext'
 
 const N = COLLECTION.length
 
-const INTERVAL = 5000
+const INTERVAL = 2500
 
 export default function Collection() {
   const { openQuote, openCatalogue } = useQuote()
@@ -18,13 +18,14 @@ export default function Collection() {
   const [paused, setPaused] = useState(false)
   const [tick, setTick] = useState(0) // restarts the progress bar when the visitor jumps to a machine
   const [thumbs, setThumbs] = useState([])
+  const [ready, setReady] = useState(false)
   const [fail, setFail] = useState(false)
   const [sel, setSel] = useState(0)
 
   useEffect(() => {
     const eng = createShowcase({
       mount: mountRef.current, hero: heroRef.current, interval: INTERVAL,
-      onThumbs: setThumbs, onIndex: setIdx, onHud: (h) => setInHero(h.inHero), onFail: () => setFail(true),
+      onThumbs: setThumbs, onReady: () => setReady(true), onIndex: setIdx, onHud: (h) => setInHero(h.inHero), onFail: () => setFail(true),
     })
     engineRef.current = eng
     return () => { eng.dispose(); engineRef.current = null }
@@ -50,6 +51,12 @@ export default function Collection() {
       <section ref={heroRef} className="relative h-screen" aria-label="The collection">
         <div className="relative h-full overflow-hidden bg-base text-fg">
           <div ref={mountRef} className="absolute inset-0" />
+          <div className={`pointer-events-none absolute inset-0 z-10 grid place-items-center bg-base transition-opacity duration-700 ${ready || fail ? 'opacity-0' : 'opacity-100'}`} role="status" aria-live="polite">
+            <div className="flex flex-col items-center gap-4">
+              <span className="h-10 w-10 animate-spin rounded-full border-2 border-fg/15 border-t-flame" />
+              <p className="text-[11px] font-semibold uppercase tracking-[.3em] text-fg-4">Loading the collection</p>
+            </div>
+          </div>
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,transparent_45%,rgba(217,225,239,.55)_100%),linear-gradient(to_top,rgba(217,225,239,.8),transparent_30%),linear-gradient(to_bottom,rgba(217,225,239,.7),transparent_20%)] dark:bg-[radial-gradient(ellipse_at_50%_45%,transparent_38%,rgba(0,0,0,.55)_100%),linear-gradient(to_top,rgba(0,0,0,.7),transparent_34%),linear-gradient(to_bottom,rgba(0,0,0,.5),transparent_22%)]" />
 
           {/* title */}
@@ -73,7 +80,7 @@ export default function Collection() {
             </button>
           </div>
 
-          {/* progress: one bar per machine, the active one fills over 5 seconds */}
+          {/* progress: one bar per machine, the active one fills over the interval */}
           <nav className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-2 sm:bottom-auto sm:left-auto sm:right-8 sm:top-1/2 sm:-translate-x-0 sm:-translate-y-1/2 sm:flex-col sm:items-end" aria-label="Machines">
             {COLLECTION.map((c, i) => (
               <button key={c.id} onClick={() => jump(i)} aria-label={`Show ${c.name}`} aria-current={i === idx} className="group flex h-8 items-center justify-end sm:h-6 sm:w-14">
@@ -102,6 +109,7 @@ export default function Collection() {
           <div className="lg:sticky lg:top-28 lg:self-start">
             <div className="glass relative grid aspect-[4/3.1] place-items-center overflow-hidden rounded-[2rem]">
               <div className="absolute inset-0 transition-all duration-700" style={{ background: `radial-gradient(circle at 50% 62%, ${p.glow}55, transparent 62%)` }} />
+              {!thumbs[sel] && <span className="relative z-10 h-8 w-8 animate-spin rounded-full border-2 border-fg/15 border-t-flame" />}
               {thumbs[sel] && <img key={p.id} src={thumbs[sel]} alt={p.name} className="relative z-10 h-[92%] w-auto animate-[fadeUp_.7s_cubic-bezier(.2,.7,.2,1)_both] object-contain drop-shadow-[0_30px_30px_rgba(0,0,0,.35)]" />}
             </div>
             <div className="mt-3 grid grid-cols-5 gap-3">

@@ -36,48 +36,52 @@ function stage(item, M) {
   return m
 }
 
-/** Renders a small studio shot of each machine for the product page. */
-function renderThumbnails() {
-  const W = 760, H = 560
+/** Studio shots of each machine for the product page — rendered one at a time so they never freeze the page. */
+function createThumbRenderer(low) {
+  const W = low ? 480 : 760, H = low ? 352 : 560
   const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true })
   r.setPixelRatio(1); r.setSize(W, H); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05
   const pm = new THREE.PMREMGenerator(r), env = pm.fromScene(new RoomEnvironment(), 0.04).texture
-  const M = makeMaterials(), out = []
-  COLLECTION.forEach((item) => {
-    const s = new THREE.Scene(); s.environment = env; s.environmentIntensity = 0.85
-    const m = buildMachine(item.kind, M); m.rotation.y = -0.5; s.add(m)
-    const k = new THREE.DirectionalLight(0xffffff, 2.4); k.position.set(3, 5, 6); s.add(k)
-    const rim = new THREE.PointLight(new THREE.Color(item.glow), 60, 22); rim.position.set(-4, 3, -3); s.add(rim)
-    const cam = new THREE.PerspectiveCamera(24, W / H, 0.5, 80)
-    m.updateMatrixWorld(true)
-    const bb = new THREE.Box3().setFromObject(m), sz = bb.getSize(new THREE.Vector3()), ct = bb.getCenter(new THREE.Vector3())
-    const t = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2))
-    const dist = Math.max((sz.y * 1.32) / (2 * t), (Math.max(sz.x, sz.z) * 1.3) / (2 * t * cam.aspect)) + sz.z * 0.5
-    cam.position.set(ct.x + dist * 0.3, ct.y + sz.y * 0.12, ct.z + dist * 0.95); cam.lookAt(ct.x, ct.y - sz.y * 0.02, ct.z)
-    r.setClearColor(0x000000, 0); r.render(s, cam); out.push(r.domElement.toDataURL('image/png'))
-  })
-  r.dispose(); pm.dispose(); return out
+  const M = makeMaterials()
+  return {
+    renderAt(i) {
+      const item = COLLECTION[i]
+      const s = new THREE.Scene(); s.environment = env; s.environmentIntensity = 0.85
+      const m = buildMachine(item.kind, M); m.rotation.y = -0.5; s.add(m)
+      const k = new THREE.DirectionalLight(0xffffff, 2.4); k.position.set(3, 5, 6); s.add(k)
+      const rim = new THREE.PointLight(new THREE.Color(item.glow), 60, 22); rim.position.set(-4, 3, -3); s.add(rim)
+      const cam = new THREE.PerspectiveCamera(24, W / H, 0.5, 80)
+      m.updateMatrixWorld(true)
+      const bb = new THREE.Box3().setFromObject(m), sz = bb.getSize(new THREE.Vector3()), ct = bb.getCenter(new THREE.Vector3())
+      const t = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2))
+      const dist = Math.max((sz.y * 1.32) / (2 * t), (Math.max(sz.x, sz.z) * 1.3) / (2 * t * cam.aspect)) + sz.z * 0.5
+      cam.position.set(ct.x + dist * 0.3, ct.y + sz.y * 0.12, ct.z + dist * 0.95); cam.lookAt(ct.x, ct.y - sz.y * 0.02, ct.z)
+      r.setClearColor(0x000000, 0); r.render(s, cam)
+      return r.domElement.toDataURL('image/webp', 0.9)
+    },
+    dispose() { r.dispose(); pm.dispose() },
+  }
 }
 
 /**
  * Scroll-driven showcase. The camera travels down a zig-zag line of machines and turns to face each in turn.
  * Callbacks: onThumbs(urls), onIndex(i), onHud({ intro, focus, atTop, inHero }), onFail().
  */
-export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex, onHud, onFail }) {
+export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex, onHud, onReady, onFail }) {
   // A fresh canvas per start: React dev mode mounts effects twice, and a canvas whose context was lost can't be reused.
   const canvas = document.createElement('canvas')
   canvas.className = 'absolute inset-0 block h-full w-full'; canvas.setAttribute('aria-hidden', 'true')
   mount.appendChild(canvas)
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+  // phones / tablets / low-memory devices get a lighter render: lower resolution, no bloom, smaller mirror, fewer particles
+  const low = matchMedia('(pointer: coarse)').matches || innerWidth < 820 || (navigator.deviceMemory && navigator.deviceMemory <= 4)
   let raf = 0, disposed = false
   let renderer
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
   } catch (e) { canvas.remove(); onFail && onFail(); return { dispose() {} } }
 
-  try { onThumbs && onThumbs(renderThumbnails()) } catch (e) { console.warn('thumbnails failed', e) }
-
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75))
+  renderer.setPixelRatio(Math.min(devicePixelRatio, low ? 1.2 : 1.75))
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92
 
   const scene = new THREE.Scene(), BG = 0x050507
@@ -91,7 +95,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
   const items = COLLECTION.map((item, i) => { const m = stage(item, M); m.userData.side = i % 2 === 0 ? -1 : 1; m.userData.base = m.scale.x; m.position.set(m.userData.side * SIDE, 0, -i * SPACING); scene.add(m); return m })
 
   // glossy floor: mirror + dark veil so reflections stay soft and fade with distance
-  const mirror = new Reflector(new THREE.PlaneGeometry(90, 170), { color: 0x8a8a92, textureWidth: 1024, textureHeight: 1024, clipBias: 0.003 })
+  const mirror = new Reflector(new THREE.PlaneGeometry(90, 170), { color: 0x8a8a92, textureWidth: low ? 512 : 1024, textureHeight: low ? 512 : 1024, clipBias: 0.003 })
   mirror.rotation.x = -Math.PI / 2; mirror.position.set(0, 0, -50); scene.add(mirror)
   const veil = new THREE.Mesh(new THREE.PlaneGeometry(90, 170), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5, depthWrite: false }))
   veil.rotation.x = -Math.PI / 2; veil.position.set(0, 0.004, -50); scene.add(veil)
@@ -102,7 +106,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
   const fillL = new THREE.PointLight(0x8fa8ff, 8, 26, 1.8); scene.add(fillL)
 
   // drifting light particles
-  const PN = reduce ? 220 : 650, pos = new Float32Array(PN * 3), col = new Float32Array(PN * 3), seed = []
+  const PN = reduce ? 220 : low ? 320 : 650, pos = new Float32Array(PN * 3), col = new Float32Array(PN * 3), seed = []
   const zSpan = (N - 1) * SPACING + 14
   for (let i = 0; i < PN; i++) {
     pos.set([(Math.random() - 0.5) * 22, Math.random() * 8, 10 - Math.random() * (zSpan + 10)], i * 3)
@@ -118,7 +122,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
   composer.addPass(new RenderPass(scene, camera))
   const bokeh = new BokehPass(scene, camera, { focus: 10, aperture: reduce ? 0.0004 : 0.0011, maxblur: 0.016 })
   composer.addPass(bokeh)
-  const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.26, 0.6, 1.0); composer.addPass(bloom)
+  const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.26, 0.6, 1.0); bloom.enabled = !low; composer.addPass(bloom)
   composer.addPass(new OutputPass())
 
   // ---- theme: a dark showroom or a pale studio, switched live with the site's theme toggle ----
@@ -152,7 +156,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
     const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight
     renderer.setSize(w, h, false); composer.setSize(w, h); composer.setPixelRatio(renderer.getPixelRatio())
     camera.aspect = w / h; portrait = camera.aspect < 0.9; camera.fov = portrait ? 40 : 32; camera.updateProjectionMatrix()
-    mirror.getRenderTarget().setSize(Math.floor(w * 0.5), Math.floor(h * 0.5))
+    mirror.getRenderTarget().setSize(Math.floor(w * (low ? 0.35 : 0.5)), Math.floor(h * (low ? 0.35 : 0.5)))
   }
   resize(); addEventListener('resize', resize)
 
@@ -161,6 +165,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
   const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; onHud && onHud({ inHero: visible }) }, { threshold: 0 }); io.observe(hero)
   const look = new THREE.Vector3(), accent = new THREE.Color(), tmp = new THREE.Color()
 
+  let firstDone = false, thumbTr = null
   const frame = (now) => {
     if (disposed) return
     raf = requestAnimationFrame(frame)
@@ -170,7 +175,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
 
     // autoplay: advance to the next machine every `interval` ms (wraps back to the first)
     if (!paused && !document.hidden && !reduce) { timer += dt; if (timer >= interval / 1000) goTo((target + 1) % N) }
-    cur += (target - cur) * (1 - Math.exp(-dt * (reduce ? 12 : fast ? 5.5 : 2.6)))
+    cur += (target - cur) * (1 - Math.exp(-dt * (reduce ? 12 : fast ? 7 : 4.6)))
     const i0 = Math.min(N - 2, Math.floor(cur)), e = clamp(cur - i0, 0, 1)
     idxNow = clamp(cur, 0, N - 1)
 
@@ -208,18 +213,37 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
     }
     pa.needsUpdate = true
     composer.render()
+    if (!firstDone) {
+      firstDone = true; onReady && onReady()
+      // the product-page images are only needed further down: render them one per idle slot, after the scene is on screen
+      const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 80))
+      const urls = new Array(N).fill(''); let k = 0
+      const step = () => {
+        if (disposed) return
+        try {
+          thumbTr = thumbTr || createThumbRenderer(low)
+          urls[k] = thumbTr.renderAt(k); onThumbs && onThumbs(urls.slice()); k++
+        } catch (e) { console.warn('thumbnails failed', e); k = N }
+        if (k < N) idle(step); else { thumbTr.dispose(); thumbTr = null }
+      }
+      idle(step)
+    }
 
     const show = clamp(Math.round(idxNow), 0, N - 1)
     if (show !== lastShown) { lastShown = show; onIndex && onIndex(show) }
   }
-  raf = requestAnimationFrame(frame)
+  let started = false
+  const begin = () => { if (disposed || started) return; started = true; raf = requestAnimationFrame(frame) }
+  // compile shaders off the critical path so the first frame doesn't freeze, but never wait forever
+  ;(renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve()).catch(() => {}).then(begin)
+  setTimeout(begin, 4000)
   onHud && onHud({ inHero: true })
 
   return {
     goTo, setPaused(v) { paused = v; timer = 0 },
     dispose() {
       disposed = true; cancelAnimationFrame(raf); removeEventListener('resize', resize); io.disconnect(); themeObs.disconnect()
-      composer.dispose(); pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove()
+      thumbTr && thumbTr.dispose(); composer.dispose(); pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove()
     },
   }
 }
