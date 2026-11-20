@@ -36,38 +36,11 @@ function stage(item, M) {
   return m
 }
 
-/** Studio shots of each machine for the product page — rendered one at a time so they never freeze the page. */
-function createThumbRenderer(low) {
-  const W = low ? 480 : 760, H = low ? 352 : 560
-  const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true })
-  r.setPixelRatio(1); r.setSize(W, H); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05
-  const pm = new THREE.PMREMGenerator(r), env = pm.fromScene(new RoomEnvironment(), 0.04).texture
-  const M = makeMaterials()
-  return {
-    renderAt(i) {
-      const item = COLLECTION[i]
-      const s = new THREE.Scene(); s.environment = env; s.environmentIntensity = 0.85
-      const m = buildMachine(item.kind, M); m.rotation.y = -0.5; s.add(m)
-      const k = new THREE.DirectionalLight(0xffffff, 2.4); k.position.set(3, 5, 6); s.add(k)
-      const rim = new THREE.PointLight(new THREE.Color(item.glow), 60, 22); rim.position.set(-4, 3, -3); s.add(rim)
-      const cam = new THREE.PerspectiveCamera(24, W / H, 0.5, 80)
-      m.updateMatrixWorld(true)
-      const bb = new THREE.Box3().setFromObject(m), sz = bb.getSize(new THREE.Vector3()), ct = bb.getCenter(new THREE.Vector3())
-      const t = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2))
-      const dist = Math.max((sz.y * 1.32) / (2 * t), (Math.max(sz.x, sz.z) * 1.3) / (2 * t * cam.aspect)) + sz.z * 0.5
-      cam.position.set(ct.x + dist * 0.3, ct.y + sz.y * 0.12, ct.z + dist * 0.95); cam.lookAt(ct.x, ct.y - sz.y * 0.02, ct.z)
-      r.setClearColor(0x000000, 0); r.render(s, cam)
-      return r.domElement.toDataURL('image/webp', 0.9)
-    },
-    dispose() { r.dispose(); pm.dispose() },
-  }
-}
-
 /**
  * Scroll-driven showcase. The camera travels down a zig-zag line of machines and turns to face each in turn.
- * Callbacks: onThumbs(urls), onIndex(i), onHud({ intro, focus, atTop, inHero }), onFail().
+ * Callbacks: onIndex(i), onHud({ inHero }), onReady(), onFail().
  */
-export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex, onHud, onReady, onFail }) {
+export function createShowcase({ mount, hero, interval = 2500, onIndex, onHud, onReady, onFail }) {
   // A fresh canvas per start: React dev mode mounts effects twice, and a canvas whose context was lost can't be reused.
   const canvas = document.createElement('canvas')
   canvas.className = 'absolute inset-0 block h-full w-full'; canvas.setAttribute('aria-hidden', 'true')
@@ -144,7 +117,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
     dust.material.blending = blend; dust.material.opacity = T.dust[0]; dust.material.size = T.dust[1]; dust.material.color.set(T.dustCol ?? 0xffffff); dust.material.needsUpdate = true
     items.forEach((m) => { [m.userData.halo.material, m.userData.pool.material].forEach((mat) => { mat.blending = blend; mat.needsUpdate = true }); m.userData.shadow.material.opacity = T.shadow; m.userData.shadow.visible = T.shadow > 0 })
     M.tank.color.set(T.tank); M.tank.roughness = T.tankRough
-    ;[M.orange, M.anodOrange].forEach((mat) => { mat.color.set(T.orange[0]); mat.envMapIntensity = T.orange[1]; mat.clearcoat = T.orange[2] })
+    ;[M.orange].forEach((mat) => { mat.color.set(T.orange[0]); mat.envMapIntensity = T.orange[1]; mat.clearcoat = T.orange[2] })
   }
   const isDarkNow = () => document.documentElement.classList.contains('dark')
   applyTheme(isDarkNow())
@@ -165,13 +138,16 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
   const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; onHud && onHud({ inHero: visible }) }, { threshold: 0 }); io.observe(hero)
   const look = new THREE.Vector3(), accent = new THREE.Color(), tmp = new THREE.Color()
 
-  let firstDone = false, thumbTr = null
+  let firstDone = false
   const frame = (now) => {
     if (disposed) return
     raf = requestAnimationFrame(frame)
     const dt = Math.min(0.05, (now - last) / 1000); last = now
     if (!visible) return
     const t = now / 1000
+
+    // living details: the controller display and indicator light pulse gently
+    M.screen.emissiveIntensity = 1.0 + 0.28 * Math.sin(t * 3); M.ledGreen.emissiveIntensity = 1.5 + 0.7 * Math.sin(t * 4.2)
 
     // autoplay: advance to the next machine every `interval` ms (wraps back to the first)
     if (!paused && !document.hidden && !reduce) { timer += dt; if (timer >= interval / 1000) goTo((target + 1) % N) }
@@ -213,21 +189,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
     }
     pa.needsUpdate = true
     composer.render()
-    if (!firstDone) {
-      firstDone = true; onReady && onReady()
-      // the product-page images are only needed further down: render them one per idle slot, after the scene is on screen
-      const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 80))
-      const urls = new Array(N).fill(''); let k = 0
-      const step = () => {
-        if (disposed) return
-        try {
-          thumbTr = thumbTr || createThumbRenderer(low)
-          urls[k] = thumbTr.renderAt(k); onThumbs && onThumbs(urls.slice()); k++
-        } catch (e) { console.warn('thumbnails failed', e); k = N }
-        if (k < N) idle(step); else { thumbTr.dispose(); thumbTr = null }
-      }
-      idle(step)
-    }
+    if (!firstDone) { firstDone = true; onReady && onReady() }
 
     const show = clamp(Math.round(idxNow), 0, N - 1)
     if (show !== lastShown) { lastShown = show; onIndex && onIndex(show) }
@@ -243,7 +205,7 @@ export function createShowcase({ mount, hero, interval = 5000, onThumbs, onIndex
     goTo, setPaused(v) { paused = v; timer = 0 },
     dispose() {
       disposed = true; cancelAnimationFrame(raf); removeEventListener('resize', resize); io.disconnect(); themeObs.disconnect()
-      thumbTr && thumbTr.dispose(); composer.dispose(); pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove()
+      composer.dispose(); pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove()
     },
   }
 }

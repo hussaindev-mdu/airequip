@@ -4,6 +4,7 @@ import SiteLayout from './components/Layout'
 import { QuoteProvider } from './QuoteContext'
 import Home from './pages/Home'
 import Products from './pages/Products'
+import ProductDetail from './pages/ProductDetail'
 import { loadCollection } from './pages/lazy'
 import Services from './pages/Services'
 import Industries from './pages/Industries'
@@ -23,6 +24,7 @@ export default function App() {
           <Route element={<SiteLayout />}>
             <Route index element={<Home />} />
             <Route path="products" element={<Products />} />
+            <Route path="products/:slug" element={<ProductDetail />} />
             <Route path="collection" element={<Collection />} />
             <Route path="services" element={<Services />} />
             <Route path="industries" element={<Industries />} />

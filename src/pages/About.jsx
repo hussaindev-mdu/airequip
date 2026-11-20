@@ -6,14 +6,14 @@ import { stats } from '../data'
 
 const pillars = [
   { Icon: Compass, t: 'Assess first', d: 'We assess airflow, pressure, duty cycle and future demand before recommending equipment — not simply the biggest machine on the list.' },
-  { Icon: Layers, t: 'One complete system', d: 'Compressors, dryers, receivers, filters and piping are selected as one dependable production system.' },
+  { Icon: Layers, t: 'One complete system', d: 'Compressors, dryers, receivers and filters are selected as one dependable production system.' },
   { Icon: MapPin, t: 'Support that stays local', d: 'Planned maintenance, genuine spares and breakdown diagnosis from a team that knows your site.' },
 ]
 
 export default function About() {
   return (
     <>
-      <PageHero eyebrow="About us" title="Air Equipment & Solutions." crumbs={[{ label: 'About' }]}
+      <PageHero eyebrow="About us" title="Air Equipments & Solutions." crumbs={[{ label: 'About' }]}
         text="An authorised VAYU dealer and service partner delivering compressed-air sales, installation and service across South Tamil Nadu." />
       <section className="section !pt-10">
         <div className="grid gap-5 md:grid-cols-3">

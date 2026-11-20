@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, ArrowUpRight, ChevronDown, MapPin, Wrench } from 'lucide-react'
-import { products, bands, chain, services, industries, districts, slugify, faqs, contact } from '../data'
+import { services, industries, districts, slugify, faqs, contact } from '../data'
+import { PRODUCTS, RANGE_INTRO, SUBSYSTEM, SYSTEM_STATEMENT, chain } from '../products'
 import { useQuote } from '../QuoteContext'
 import { asset } from '../lib/asset'
 
@@ -26,25 +27,29 @@ const MoreLink = ({ to, children }) => (
   <Link to={to} className="btn btn-glass self-start">{children} <ArrowRight size={16} /></Link>
 )
 
-export function ProductCards({ showAll }) {
+export function ProductCards({ showAll, noHead }) {
   return (
     <section className="section">
-      <Head eyebrow="The complete air system" title="One partner for every part of your compressed-air system."
-        text="We assess airflow, pressure, duty cycle and future demand before recommending equipment — not simply the biggest machine on the list."
+      <Head hidden={noHead} eyebrow={RANGE_INTRO.eyebrow} title={RANGE_INTRO.title} text={RANGE_INTRO.lead}
         right={showAll && <MoreLink to="/products">All products</MoreLink>} />
-      <div className="grid gap-6 md:grid-cols-3">
-        {products.map((p, i) => (
-          <motion.article key={p.title} {...fade} transition={{ duration: 0.7, delay: i * 0.12 }} className="glass glass-hover group overflow-hidden rounded-[2rem] p-3">
-            <div className="relative h-56 overflow-hidden rounded-[1.5rem]">
-              <img src={p.img} alt={p.title} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
-              <span className="glass absolute left-3 top-3 rounded-full px-3 py-1 text-xs">0{i + 1}</span>
-            </div>
-            <div className="p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-300">{p.tag}</p>
-              <h3 className="mt-2 font-display text-xl font-bold text-fg">{p.title}</h3>
-              <p className="mt-2 text-sm text-fg-3">{p.text}</p>
-              <p className="mt-4 inline-block rounded-full bg-fg/5 px-3 py-1 text-xs text-fg-2">{p.spec}</p>
-            </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {PRODUCTS.map((p, i) => (
+          <motion.article key={p.slug} {...fade} transition={{ duration: 0.7, delay: (i % 3) * 0.1 }}>
+            <Link to={`/products/${p.slug}`} className="glass glass-hover group flex h-full flex-col overflow-hidden rounded-[2rem] p-3">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-black/10">
+                <img src={p.image} alt={`${p.name} — VAYU`} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                <span className="glass absolute left-3 top-3 rounded-full px-3 py-1 text-xs">0{i + 1}</span>
+              </div>
+              <div className="flex flex-1 flex-col p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: p.glow }}>{p.tag}</p>
+                <h3 className="mt-2 font-display text-xl font-bold text-fg">{p.name}</h3>
+                <p className="mt-2 text-sm text-fg-3">{p.cardText}</p>
+                <ul className="mt-4 space-y-1.5 text-sm text-fg-2">
+                  {p.bullets.map((b) => <li key={b} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: p.glow }} />{b}</li>)}
+                </ul>
+                <span className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold text-flame">Know more <ArrowUpRight size={16} /></span>
+              </div>
+            </Link>
           </motion.article>
         ))}
       </div>
@@ -52,26 +57,25 @@ export function ProductCards({ showAll }) {
   )
 }
 
-export function Bands() {
+/** "The VAYU Subsystem & Features" */
+export function Subsystem() {
   return (
     <section className="section !pt-0">
-      <Head eyebrow="Common VAYU starting points" title="Start with the output your machines actually need."
-        text="Every SL model is available across 7–12.5 bar; final sizing depends on demand, duty cycle and pressure losses." />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {bands.map((b, i) => (
-          <motion.div key={b.n} {...fade} transition={{ duration: 0.6, delay: i * 0.1 }} className="glass glass-hover rounded-3xl p-6">
-            <span className="font-display text-sm text-flame">{b.n}</span>
-            <h4 className="mt-3 text-sm text-fg-4">{b.t}</h4>
-            <p className="font-display text-2xl font-bold text-fg">{b.m}</p>
-            <p className="mt-3 text-sm text-fg-2">{b.s}</p>
-            <p className="text-xs text-fg-4">{b.x}</p>
+      <Head eyebrow="The VAYU subsystem & features" title="Engineered inside every compressor"
+        text="The same dependable building blocks sit behind every VAYU screw compressor." />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {SUBSYSTEM.map((x, i) => (
+          <motion.div key={x.t} {...fade} transition={{ duration: 0.6, delay: i * 0.08 }} className="glass glass-hover rounded-3xl p-6">
+            <span className="font-display text-sm text-flame">0{i + 1}</span>
+            <h3 className="mt-3 font-display text-lg font-bold leading-snug text-fg">{x.t}</h3>
+            <p className="mt-2 text-sm text-fg-3">{x.d}</p>
           </motion.div>
         ))}
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <div className="glass rounded-3xl p-5 text-sm"><b className="text-fg">Steady demand?</b> <span className="text-fg-3">Choose fixed speed for simple, consistent production loads.</span></div>
-        <div className="glass rounded-3xl p-5 text-sm"><b className="text-fg">Changing demand?</b> <span className="text-fg-3">Choose VFD to match output as machines start and stop.</span></div>
-      </div>
+      <motion.div {...fade} className="glass mt-6 rounded-3xl p-6 text-center sm:p-8">
+        <h3 className="font-display text-xl font-bold text-fg">{SYSTEM_STATEMENT.title}</h3>
+        <p className="mx-auto mt-2 max-w-2xl text-fg-3">{SYSTEM_STATEMENT.text}</p>
+      </motion.div>
     </section>
   )
 }
@@ -83,7 +87,7 @@ export function SystemsChain() {
       <Head eyebrow="Complete compressed-air system" title="Everything required between the compressor and your machines."
         text="Correct air treatment, storage and distribution improve air quality, stabilise pressure and reduce avoidable pressure loss."
         right={<button onClick={openQuote} className="btn btn-glass self-start">Ask us to size your compressor <ArrowUpRight size={16} /></button>} />
-      <div className="relative grid gap-4 md:grid-cols-5">
+      <div className="relative grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <div className="absolute left-8 right-8 top-1/2 hidden h-px bg-gradient-to-r from-flame via-sky-400 to-flame opacity-50 md:block" />
         {chain.map((c, i) => (
           <motion.div key={c.t} {...fade} transition={{ duration: 0.6, delay: i * 0.1 }} className="glass glass-hover relative rounded-3xl p-6 text-center">

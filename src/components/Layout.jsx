@@ -12,7 +12,7 @@ export function Logo() {
     <Link to="/" className="flex items-center gap-3">
       <span className="glass grid h-10 w-10 place-items-center rounded-2xl text-flame"><Wind size={20} /></span>
       <span className="font-display text-sm font-bold leading-tight text-fg">
-        Air Equipment<br /><span className="font-medium text-fg-4">& Solutions</span>
+        Air Equipments<br /><span className="font-medium text-fg-4">& Solutions</span>
       </span>
     </Link>
   )
@@ -120,7 +120,7 @@ export function Footer() {
         </div>
         <div className="mt-10 flex flex-col justify-between gap-2 border-t border-fg/10 pt-6 text-xs text-fg-4 sm:flex-row">
           <span>© {new Date().getFullYear()} {BRAND}</span>
-          <span>Authorised VAYU dealer & service partner · 3D model “Piston compressor WO 6-180” by Nedd_Nelson (CC BY 4.0)</span>
+          <span>Authorised VAYU dealer & service partner</span>
         </div>
       </div>
     </footer>

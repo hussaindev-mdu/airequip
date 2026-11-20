@@ -1,13 +1,14 @@
 import PageHero from '../components/PageHero'
-import { Bands, CTA, ProductCards, SystemsChain } from '../components/Sections'
+import { CTA, ProductCards, Subsystem, SystemsChain } from '../components/Sections'
+import { RANGE_INTRO } from '../products'
 
 export default function Products() {
   return (
     <>
-      <PageHero eyebrow="Products" title="Compressors and complete air systems." crumbs={[{ label: 'Products' }]}
-        text="Fixed-speed and VFD screw compressors from 5 to 45 kW, with dryers, receivers, filters and piping to match." />
-      <ProductCards />
-      <Bands />
+      <PageHero eyebrow="Products" title="The complete VAYU compressed air range." crumbs={[{ label: 'Products' }]}
+        text={RANGE_INTRO.text[0]} />
+      <ProductCards noHead />
+      <Subsystem />
       <SystemsChain />
       <CTA />
     </>
