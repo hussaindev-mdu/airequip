@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Mail, MessageCircle, Phone, Wrench } from 'lucide-react'
+import { MessageCircle, Phone, Wrench } from 'lucide-react'
 import PageHero from '../components/PageHero'
 import { FAQ } from '../components/Sections'
 import { contact } from '../data'
@@ -7,10 +7,9 @@ import { contact } from '../data'
 export default function Contact() {
   const [sent, setSent] = useState(false)
   const cards = [
-    { Icon: Phone, t: 'Sales', v: contact.sales, href: `tel:${contact.sales.replace(/\s/g, '')}` },
-    { Icon: Wrench, t: 'Service', v: contact.service, href: `tel:${contact.service.replace(/\s/g, '')}` },
-    { Icon: MessageCircle, t: 'WhatsApp', v: 'Chat with us', href: `https://wa.me/${contact.whatsapp}` },
-    { Icon: Mail, t: 'Email', v: contact.email, href: `mailto:${contact.email}` },
+    { Icon: Phone, t: contact.salesService.label, v: contact.salesService.display, href: `tel:${contact.salesService.tel}` },
+    { Icon: Wrench, t: contact.pipeline.label, v: contact.pipeline.display, href: `tel:${contact.pipeline.tel}` },
+    { Icon: MessageCircle, t: contact.whatsapp.label, v: contact.whatsapp.display, href: contact.whatsapp.href },
   ]
   return (
     <>

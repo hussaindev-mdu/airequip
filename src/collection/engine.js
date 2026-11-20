@@ -197,7 +197,9 @@ export function createShowcase({ mount, hero, interval = 2500, onIndex, onHud, o
   let started = false
   const begin = () => { if (disposed || started) return; started = true; raf = requestAnimationFrame(frame) }
   // compile shaders off the critical path so the first frame doesn't freeze, but never wait forever
-  ;(renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve()).catch(() => {}).then(begin)
+  // keep a handle on the precompile so dispose() never tears the renderer down while it is still running
+  const compiling = (renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve()).catch(() => {})
+  compiling.then(begin)
   setTimeout(begin, 4000)
   onHud && onHud({ inHero: true })
 
@@ -205,7 +207,9 @@ export function createShowcase({ mount, hero, interval = 2500, onIndex, onHud, o
     goTo, setPaused(v) { paused = v; timer = 0 },
     dispose() {
       disposed = true; cancelAnimationFrame(raf); removeEventListener('resize', resize); io.disconnect(); themeObs.disconnect()
-      composer.dispose(); pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove()
+      canvas.remove()
+      const free = () => { composer.dispose(); pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss() }
+      Promise.race([compiling, new Promise((r) => setTimeout(r, 4000))]).then(free)
     },
   }
 }

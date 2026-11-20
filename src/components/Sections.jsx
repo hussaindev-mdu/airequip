@@ -140,7 +140,7 @@ export function IndustriesGrid({ limit, showAll, noHead }) {
         right={showAll && <MoreLink to="/industries">All industries</MoreLink>} />
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((x, i) => (
-          <motion.div key={x.t} {...fade} transition={{ duration: 0.6, delay: (i % 3) * 0.1 }} className="group relative h-72 overflow-hidden rounded-[2rem]">
+          <motion.div key={x.t} {...fade} transition={{ duration: 0.6, delay: (i % 3) * 0.1 }} className={`group relative h-72 overflow-hidden rounded-[2rem] ${!limit && i === list.length - 1 && list.length % 3 === 1 ? 'lg:col-span-3' : ''}`}>
             <img src={x.img} alt={x.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/10 to-transparent" />
             <div className="glass-dark absolute inset-x-3 bottom-3 rounded-3xl p-4">
@@ -206,7 +206,7 @@ export function CTA() {
         <p className="mx-auto mt-4 max-w-xl text-white/90">Share the application, pressure, working hours and current problems. We’ll recommend the next practical step.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button onClick={openQuote} className="btn bg-white text-[#0f172a] hover:bg-white/90">Request a quote <ArrowUpRight size={16} /></button>
-          <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noreferrer" className="btn btn-glass">WhatsApp us <ArrowUpRight size={16} /></a>
+          <a href={contact.whatsapp.href} target="_blank" rel="noreferrer" className="btn btn-glass">WhatsApp us <ArrowUpRight size={16} /></a>
         </div>
       </motion.div>
     </section>

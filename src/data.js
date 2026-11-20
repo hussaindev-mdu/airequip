@@ -30,10 +30,11 @@ export const services = [
 export const industries = [
   { t: 'Engineering & fabrication', d: 'CNC machining, fabrication, pneumatic tools and continuous production.', img: asset('/images/machining.webp') },
   { t: 'Food & process', d: 'Reliable treated air for process lines, handling and packaging.', img: asset('/images/food-processing.webp') },
-  { t: 'Packaging & plastics', d: 'Stable pressure for moulding, forming and packaging machinery.', img: asset('/images/packaging.webp') },
+  { t: 'Packaging & plastics', d: 'Stable pressure for moulding, forming and packaging machinery.', img: asset('/images/plastics.webp') },
   { t: 'Ceramics, foundries & process', d: 'Dependable air for material handling, process control and demanding plant conditions.', img: asset('/images/ceramics.webp') },
-  { t: 'Automotive & manufacturing', d: 'Practical systems for tools, paint, assembly and everyday workshop loads.', img: asset('/images/automotive.webp') },
+  { t: 'Automotive & manufacturing', d: 'Practical systems for tools, paint, assembly and everyday workshop loads.', img: asset('/images/garage.webp') },
   { t: 'Textiles & garment', d: 'Efficient air for looms, controls, cleaning and garment-production equipment.', img: asset('/images/textiles.webp') },
+  { t: 'Grains & pulses colour sorting', d: 'Dependable compressed air for grain and pulse colour-sorting applications.', img: asset('/images/grains-pulses.webp') },
 ]
 
 export const districts = ['Madurai', 'Dindigul', 'Theni', 'Sivaganga', 'Virudhunagar', 'Ramanathapuram', 'Tenkasi']
@@ -48,10 +49,11 @@ export const faqs = [
   ['Can you maintain an existing compressor?', 'We provide preventive maintenance, AMC support, genuine spares and breakdown diagnosis across our service area.'],
 ]
 
-// TODO: replace with real company contact details
+// Company contact numbers (India, +91). Email is intentionally not listed until a real address is provided.
+const intl = (n) => `+91 ${n.slice(0, 5)} ${n.slice(5)}`
+const tel = (n) => `+91${n}`
 export const contact = {
-  sales: '+91 00000 00000',
-  service: '+91 00000 00001',
-  whatsapp: '910000000000',
-  email: 'sales@example.com',
+  salesService: { label: 'Sales & Service', display: intl('9514149505'), tel: tel('9514149505') },
+  pipeline: { label: 'PPR Pipeline', display: intl('9514149504'), tel: tel('9514149504') },
+  whatsapp: { label: 'WhatsApp', display: intl('9514149505'), number: '919514149505', href: 'https://wa.me/919514149505' },
 }
